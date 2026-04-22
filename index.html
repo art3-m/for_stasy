@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>🌸 ASIC Profit Calculator для девочки</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #ffe9f4 0%, #ffe0f0 25%, #ffd6e8 50%, #ffe9f4 100%);
+            font-family: 'Segoe UI', 'Quicksand', system-ui, -apple-system, 'Poppins', sans-serif;
+            padding: 20px;
+            position: relative;
+        }
+
+        body::before {
+            content: "🌸🌷🌹🌼🌸🌺🌻🌷🌹🌸🌼🌺🌻🌷🌹🌸🌼🌺🌻";
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            font-size: 45px;
+            white-space: normal;
+            word-wrap: break-word;
+            opacity: 0.12;
+            pointer-events: none;
+            z-index: 0;
+            line-height: 1.2;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .floating-flower {
+            position: fixed;
+            font-size: 28px;
+            pointer-events: none;
+            z-index: 0;
+            animation: float 15s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(8deg); }
+        }
+
+        .loader-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 230, 240, 0.95);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+        }
+        .loader-flower {
+            font-size: 60px;
+            animation: spinFlower 1.2s infinite ease-in-out;
+            text-shadow: 0 0 10px #ffb7c5;
+        }
+        @keyframes spinFlower {
+            0% { transform: rotate(0deg) scale(1); opacity: 1; }
+            50% { transform: rotate(180deg) scale(1.2); opacity: 0.7; }
+            100% { transform: rotate(360deg) scale(1); opacity: 1; }
+        }
+
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        .calculator {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(10px);
+            border-radius: 48px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 192, 203, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #f8a5c2, #ffb8d2, #ffc4dd);
+            padding: 28px 24px;
+            text-align: center;
+            border-bottom: 2px solid rgba(255,255,240,0.6);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.08);
+        }
+
+        .header p {
+            color: rgba(255,255,240,0.95);
+            font-size: 13px;
+            margin-top: 8px;
+        }
+
+        .content {
+            padding: 28px 24px;
+        }
+
+        .input-group {
+            margin-bottom: 22px;
+        }
+
+        .label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            color: #b13e6b;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .input-wrapper {
+            background: white;
+            border-radius: 100px;
+            border: 1.5px solid #ffe0eb;
+            padding: 4px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.2s;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: #f8a5c2;
+            box-shadow: 0 0 0 3px rgba(248, 165, 194, 0.2);
+        }
+
+        .input-wrapper input {
+            border: none;
+            background: transparent;
+            padding: 14px 0;
+            font-size: 16px;
+            font-weight: 500;
+            width: 100%;
+            outline: none;
+            color: #2d1b24;
+        }
+
+        .unit {
+            color: #d47a9e;
+            font-size: 14px;
+            font-weight: 500;
+            margin-left: 8px;
+            white-space: nowrap;
+        }
+
+        .hint, .hours-badge {
+            font-size: 11px;
+            color: #c284a2;
+            margin-top: 6px;
+            margin-left: 16px;
+        }
+        .hours-badge {
+            font-weight: 500;
+        }
+
+        /* Карточки */
+        .result-card, .whatif-card, .asic-card, .compare-section {
+            background: linear-gradient(145deg, #fff5f8, #fff0f5);
+            border-radius: 36px;
+            padding: 18px 20px;
+            margin: 20px 0 18px;
+            border: 1px solid #ffe2ed;
+        }
+        .whatif-card {
+            margin-top: 10px;
+            background: #fffafc;
+            position: relative;
+        }
+        .compare-section {
+            background: #fff7f9;
+            transition: opacity 0.3s ease;
+        }
+        .compare-section.loading {
+            opacity: 0.6;
+            position: relative;
+        }
+        .compare-section.loading::after {
+            content: "🌸🌸🌸";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 28px;
+            animation: spinFlower 0.8s infinite;
+            background: rgba(255,255,240,0.8);
+            padding: 12px 20px;
+            border-radius: 60px;
+        }
+        .row-flex {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .result-item {
+            flex: 1;
+            background: rgba(255,255,245,0.8);
+            border-radius: 24px;
+            padding: 10px 8px;
+            text-align: center;
+            min-width: 90px;
+        }
+        .result-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #c47a9e;
+            letter-spacing: 0.5px;
+        }
+        .result-value {
+            font-size: 20px;
+            font-weight: 800;
+            color: #9e3c63;
+            line-height: 1.2;
+        }
+        .profit-value { color: #2e7d64; }
+        .profit-value.negative { color: #d16b6b; }
+        .btc-small { font-size: 10px; color: #b86b90; }
+
+        .update-time {
+            font-size: 10px;
+            text-align: center;
+            color: #d9a6bd;
+            margin-top: 12px;
+            padding-top: 8px;
+            border-top: 1px dashed #ffe0eb;
+        }
+        .footer-note {
+            text-align: center;
+            font-size: 11px;
+            color: #e3aac4;
+            margin-top: 16px;
+        }
+        /* Кнопки */
+        .icon-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 40px;
+            transition: 0.2s;
+            color: #d47a9e;
+        }
+        .icon-btn:hover {
+            background: #ffe0eb;
+            transform: scale(1.05);
+        }
+        .reset-btn {
+            position: absolute;
+            top: 18px;
+            right: 20px;
+            font-size: 13px;
+            background: #ffe2ed;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-weight: 500;
+        }
+        .compare-btn {
+            background: #f8a5c2;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-bottom: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .compare-btn:hover {
+            background: #f48fb1;
+            transform: scale(1.02);
+        }
+        .delete-asic {
+            background: #ffe0eb;
+            border: none;
+            border-radius: 30px;
+            font-size: 12px;
+            padding: 2px 10px;
+            margin-top: 6px;
+            cursor: pointer;
+            color: #b13e6b;
+        }
+        .compare-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+        .asic-compare-card {
+            background: white;
+            border-radius: 28px;
+            padding: 14px;
+            border: 1px solid #ffe2ed;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+        }
+        .asic-title {
+            font-weight: 700;
+            color: #b13e6b;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 15px;
+        }
+        .asic-field {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 12px;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .asic-field span:first-child {
+            font-weight: 600;
+            color: #c284a2;
+            min-width: 70px;
+        }
+        .asic-field input {
+            width: 100px;
+            padding: 8px 10px;
+            border-radius: 40px;
+            border: 1px solid #ffe0eb;
+            background: #fffafc;
+            text-align: center;
+            font-weight: 500;
+        }
+        .compare-result {
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 10px;
+            text-align: center;
+            background: #fff0f5;
+            border-radius: 28px;
+            padding: 8px;
+        }
+        @media (max-width: 650px) {
+            .compare-grid { grid-template-columns: 1fr; }
+            .result-value { font-size: 16px; }
+            .asic-field { flex-direction: column; align-items: stretch; }
+            .asic-field input { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+<div class="loader-overlay" id="loaderOverlay">
+    <div class="loader-flower">🌸🌼🌸</div>
+</div>
+
+<div class="floating-flower" style="top: 5%; left: 3%; animation-duration: 18s;">🌹</div>
+<div class="floating-flower" style="top: 15%; right: 2%; animation-duration: 22s;">🌸</div>
+<div class="floating-flower" style="bottom: 10%; left: 5%; animation-duration: 20s;">🌷</div>
+<div class="floating-flower" style="bottom: 20%; right: 6%; animation-duration: 25s;">🌺</div>
+<div class="floating-flower" style="top: 40%; left: 2%; animation-duration: 17s;">🌼</div>
+
+<div class="container">
+    <div class="calculator">
+        <div class="header">
+            <h1>💖 ASIC Profit <span>🌸</span></h1>
+            <p>калькулятор для самой прекрасной майнерши ✨</p>
+        </div>
+
+        <!-- Кнопка и ВЕСЬ блок сравнения наверху -->
+        <div style="padding: 0 24px;">
+            <button class="compare-btn" id="toggleCompareBtn">🌸 Сравнить ASIC</button>
+        </div>
+
+        <div id="compareContainer" style="display: none; padding: 0 24px 0 24px;">
+            <div class="compare-section" id="compareSection">
+                <div class="label" style="justify-content: space-between;">
+                    <span>📊 Сравнение асиков</span>
+                    <span style="font-size: 11px;">🌸 максимум 3 дополнительных</span>
+                </div>
+                <div id="compareAsicsList" class="compare-grid"></div>
+                <button class="icon-btn" id="addCompareAsicBtn" style="margin-top: 16px; background: #ffe2ed; width: 100%; padding: 10px;">➕ Добавить асик для сравнения</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- основные параметры -->
+            <div class="input-group">
+                <div class="label"><span>⚙️</span> Хешрейт</div>
+                <div class="input-wrapper">
+                    <input type="number" id="hashrate" value="120" step="1">
+                    <span class="unit">TH/s</span>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <div class="label"><span>⏱️</span> Аптайм</div>
+                <div class="input-wrapper">
+                    <input type="number" id="uptime" value="65" step="1">
+                    <span class="unit">%</span>
+                </div>
+                <div class="hours-badge" id="hoursHint">🌸 15.6 часов в сутки</div>
+            </div>
+
+            <div class="input-group">
+                <div class="label"><span>🔌</span> Потребление</div>
+                <div class="input-wrapper">
+                    <input type="number" id="power" value="1.8" step="0.1">
+                    <span class="unit">кВт</span>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <div class="label"><span>💸</span> Цена э/э</div>
+                <div class="input-wrapper">
+                    <input type="number" id="kwhPrice" value="3.2" step="0.1">
+                    <span class="unit">₽/кВт·ч</span>
+                </div>
+            </div>
+
+            <!-- Цена ASIC и окупаемость -->
+            <div class="asic-card">
+                <div class="input-group" style="margin-bottom: 12px;">
+                    <div class="label"><span>🖥️</span> Цена ASIC</div>
+                    <div class="input-wrapper">
+                        <input type="number" id="asicPrice" value="12000" step="1000">
+                        <span class="unit">₽</span>
+                    </div>
+                </div>
+                <div class="row-flex">
+                    <div class="result-item">
+                        <div class="result-label">⏳ ОКУПАЕМОСТЬ</div>
+                        <div class="result-value" id="paybackDays">— дней</div>
+                        <div class="btc-small" id="paybackMonths">— месяцев</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Блок "Что если?" с кнопкой сброса -->
+            <div class="whatif-card">
+                <div class="label"><span>💭</span> Что если?</div>
+                <button class="icon-btn reset-btn" id="resetWhatIfBtn">🌱 сбросить</button>
+                <div class="input-group">
+                    <div class="label" style="font-size:12px">Курс BTC (USD) ручной</div>
+                    <div class="input-wrapper">
+                        <input type="number" id="manualBtcPrice" placeholder="оставь пустым для реального" step="1000">
+                        <span class="unit">$</span>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <div class="label" style="font-size:12px">Курс USD → RUB ручной</div>
+                    <div class="input-wrapper">
+                        <input type="number" id="manualUsdRate" placeholder="оставь пустым для реального" step="1">
+                        <span class="unit">₽</span>
+                    </div>
+                </div>
+                <div class="hint">✨ Если заполнишь — расчёт будет по твоим цифрам. Пусто — по реальным курсам.</div>
+            </div>
+
+            <!-- Результаты (день/неделя/месяц) -->
+            <div class="result-card">
+                <div class="row-flex">
+                    <div class="result-item">
+                        <div class="result-label">💰 ДЕНЬ</div>
+                        <div class="result-value" id="incomeRub">— ₽</div>
+                        <div class="btc-small" id="incomeBtc">— BTC</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">⚡ РАСХОД (день)</div>
+                        <div class="result-value" id="costRub">— ₽</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">📈 ПРИБЫЛЬ (день)</div>
+                        <div class="result-value" id="profitRub">— ₽</div>
+                    </div>
+                </div>
+                <div class="row-flex">
+                    <div class="result-item">
+                        <div class="result-label">📅 НЕДЕЛЯ</div>
+                        <div class="result-value" id="weekProfit">— ₽</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">📆 МЕСЯЦ (доход)</div>
+                        <div class="result-value" id="monthProfit">— ₽</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">⭐ ПРИБЫЛЬ / мес</div>
+                        <div class="result-value" id="monthProfitClean">— ₽</div>
+                    </div>
+                </div>
+                <div class="update-time" id="updateInfo">
+                    🌸 загрузка актуальных данных сети...
+                </div>
+            </div>
+
+            <div class="footer-note">
+                💡 данные BTC (цена, сложность, награда) — реальные, с API<br>
+                🌷 обновление каждые 60 сек. Поля "Что если?" переопределяют курсы.
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ---------- ГЛОБАЛЬНЫЕ ДАННЫЕ ----------
+    let currentNetworkData = {
+        btcPriceUsd: null,
+        difficulty: null,
+        blockReward: 3.125,
+        usdToRub: null
+    };
+    let updateTimer = null;
+    let compareAsics = []; // { id, hashrate, power, price }
+
+    // ---------- API ЗАПРОСЫ ----------
+    async function fetchBTCPrice() {
+        try {
+            const response = await fetch('https://api.coinpaprika.com/v1/tickers/btc-bitcoin');
+            const data = await response.json();
+            return data.quotes.USD.price;
+        } catch (e) {
+            try {
+                const resp = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT');
+                const data = await resp.json();
+                return parseFloat(data.price);
+            } catch (err) { return null; }
+        }
+    }
+    async function fetchUSDtoRUB() {
+        try {
+            const response = await fetch('https://api.exchangerate.host/latest?base=USD&symbols=RUB');
+            const data = await response.json();
+            return data.rates.RUB;
+        } catch (e) { return 89.0; }
+    }
+    async function fetchDifficulty() {
+        try {
+            const response = await fetch('https://blockstream.info/api/blocks/tip/height');
+            const height = await response.json();
+            const hashResp = await fetch(`https://blockstream.info/api/block-height/${height}`);
+            const blockHash = await hashResp.text();
+            const blockResp = await fetch(`https://blockstream.info/api/block/${blockHash}`);
+            const blockData = await blockResp.json();
+            return blockData.difficulty;
+        } catch (e) {
+            try {
+                const mempoolResp = await fetch('https://mempool.space/api/v1/difficulty/adjustment');
+                const data = await mempoolResp.json();
+                return data.currentDifficulty;
+            } catch (err) { return null; }
+        }
+    }
+
+    function calcBTCPerDay(hashrateTH, uptimePercent, difficulty, blockReward) {
+        const SECONDS_PER_DAY = 86400;
+        const TWO_POW_32 = 4294967296;
+        const hashrateHashes = hashrateTH * 1e12;
+        const uptimeFactor = uptimePercent / 100;
+        const networkHashratePerDay = (difficulty * TWO_POW_32) / SECONDS_PER_DAY;
+        if (networkHashratePerDay <= 0) return 0;
+        return (hashrateHashes * blockReward) / networkHashratePerDay * uptimeFactor;
+    }
+
+    function updateHoursHint(uptimePercent) {
+        const hours = (24 * uptimePercent / 100).toFixed(1);
+        document.getElementById('hoursHint').innerHTML = `🌸 ${hours} часов в сутки`;
+    }
+
+    function getFinalRates() {
+        const manualBtc = parseFloat(document.getElementById('manualBtcPrice').value);
+        const manualUsd = parseFloat(document.getElementById('manualUsdRate').value);
+        const finalBtcPrice = (!isNaN(manualBtc) && manualBtc > 0) ? manualBtc : currentNetworkData.btcPriceUsd;
+        const finalUsdRate = (!isNaN(manualUsd) && manualUsd > 0) ? manualUsd : currentNetworkData.usdToRub;
+        return { finalBtcPrice, finalUsdRate };
+    }
+
+    function computeAsic(hashrateTH, powerKW, priceRub, uptimePercent, kwhPriceRub, finalBtcPrice, finalUsdRate, difficulty) {
+        const btcPerDay = calcBTCPerDay(hashrateTH, uptimePercent, difficulty, 3.125);
+        const incomeRub = btcPerDay * finalBtcPrice * finalUsdRate;
+        const hoursPerDay = 24 * (uptimePercent / 100);
+        const costRub = powerKW * hoursPerDay * kwhPriceRub;
+        const profitRub = incomeRub - costRub;
+        return { profitRub, incomeRub, costRub, btcPerDay };
+    }
+
+    async function updateAllDataAndCalculate() {
+        const updateInfoDiv = document.getElementById('updateInfo');
+        updateInfoDiv.innerHTML = '🌸 обновление курсов и сложности...';
+
+        // Анимация загрузки для блока сравнения
+        const compareSection = document.getElementById('compareSection');
+        if (compareSection && document.getElementById('compareContainer').style.display === 'block') {
+            compareSection.classList.add('loading');
+        }
+
+        const [btcPriceReal, usdRateReal, difficulty] = await Promise.all([
+            fetchBTCPrice(),
+            fetchUSDtoRUB(),
+            fetchDifficulty()
+        ]);
+
+        if (compareSection) compareSection.classList.remove('loading');
+
+        if (btcPriceReal === null || usdRateReal === null || difficulty === null) {
+            updateInfoDiv.innerHTML = '🌧️ не удалось получить данные API, проверь интернет 🌸';
+            return;
+        }
+        currentNetworkData.btcPriceUsd = btcPriceReal;
+        currentNetworkData.usdToRub = usdRateReal;
+        currentNetworkData.difficulty = difficulty;
+
+        const { finalBtcPrice, finalUsdRate } = getFinalRates();
+
+        const hashrate = parseFloat(document.getElementById('hashrate').value);
+        const uptimePercent = parseFloat(document.getElementById('uptime').value);
+        const powerKW = parseFloat(document.getElementById('power').value);
+        const kwhPriceRub = parseFloat(document.getElementById('kwhPrice').value);
+        const asicPriceRub = parseFloat(document.getElementById('asicPrice').value);
+
+        if (isNaN(hashrate) || isNaN(uptimePercent) || isNaN(powerKW) || isNaN(kwhPriceRub)) return;
+
+        updateHoursHint(uptimePercent);
+
+        const mainRes = computeAsic(hashrate, powerKW, asicPriceRub, uptimePercent, kwhPriceRub, finalBtcPrice, finalUsdRate, difficulty);
+
+        document.getElementById('incomeRub').innerHTML = Math.round(mainRes.incomeRub).toLocaleString() + ' ₽';
+        document.getElementById('incomeBtc').innerHTML = mainRes.btcPerDay.toFixed(8) + ' BTC';
+        document.getElementById('costRub').innerHTML = Math.round(mainRes.costRub).toLocaleString() + ' ₽';
+        const profitElem = document.getElementById('profitRub');
+        profitElem.innerHTML = Math.round(mainRes.profitRub).toLocaleString() + ' ₽';
+        if (mainRes.profitRub >= 0) {
+            profitElem.classList.add('profit-value');
+            profitElem.classList.remove('negative');
+        } else {
+            profitElem.classList.add('negative');
+        }
+        document.getElementById('weekProfit').innerHTML = Math.round(mainRes.profitRub * 7).toLocaleString() + ' ₽';
+        document.getElementById('monthProfit').innerHTML = Math.round(mainRes.incomeRub * 30).toLocaleString() + ' ₽';
+        document.getElementById('monthProfitClean').innerHTML = Math.round(mainRes.profitRub * 30).toLocaleString() + ' ₽';
+
+        if (!isNaN(asicPriceRub) && asicPriceRub > 0 && mainRes.profitRub > 0) {
+            const days = asicPriceRub / mainRes.profitRub;
+            const months = days / 30;
+            document.getElementById('paybackDays').innerHTML = Math.ceil(days).toLocaleString() + ' дней';
+            document.getElementById('paybackMonths').innerHTML = `~ ${months.toFixed(1)} мес.`;
+        } else if (!isNaN(asicPriceRub) && asicPriceRub > 0 && mainRes.profitRub <= 0) {
+            document.getElementById('paybackDays').innerHTML = 'никогда 💔';
+            document.getElementById('paybackMonths').innerHTML = 'прибыли нет';
+        } else {
+            document.getElementById('paybackDays').innerHTML = '— дней';
+            document.getElementById('paybackMonths').innerHTML = '— месяцев';
+        }
+
+        renderCompareAsics(uptimePercent, kwhPriceRub, finalBtcPrice, finalUsdRate, difficulty);
+
+        const now = new Date();
+        let infoText = `🌷 данные сети: сложность ${(difficulty / 1e12).toFixed(2)} T | реальный BTC $${btcPriceReal.toFixed(0)} | USD ${usdRateReal.toFixed(2)} ₽`;
+        if ((!isNaN(parseFloat(document.getElementById('manualBtcPrice').value)) && parseFloat(document.getElementById('manualBtcPrice').value) > 0) ||
+            (!isNaN(parseFloat(document.getElementById('manualUsdRate').value)) && parseFloat(document.getElementById('manualUsdRate').value) > 0)) {
+            infoText += `<br>✨ используется ручной курс: BTC $${finalBtcPrice.toFixed(0)} / USD ${finalUsdRate.toFixed(2)} ₽`;
+        }
+        infoText += `<br>✨ обновлено в ${now.toLocaleTimeString()}`;
+        updateInfoDiv.innerHTML = infoText;
+    }
+
+    function renderCompareAsics(uptimePercent, kwhPriceRub, finalBtcPrice, finalUsdRate, difficulty) {
+        const container = document.getElementById('compareAsicsList');
+        if (!container) return;
+        if (compareAsics.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:20px; color:#c284a2;">🌸 Нажми "Добавить асик", чтобы сравнить</div>';
+            return;
+        }
+        container.innerHTML = '';
+        compareAsics.forEach((asic, idx) => {
+            const res = computeAsic(asic.hashrate, asic.power, asic.price, uptimePercent, kwhPriceRub, finalBtcPrice, finalUsdRate, difficulty);
+            const paybackText = (res.profitRub > 0 && asic.price > 0) ? `${Math.ceil(asic.price / res.profitRub)} дн. (${(asic.price / res.profitRub / 30).toFixed(1)} мес.)` : (res.profitRub <= 0 ? 'нет прибыли' : '—');
+            const card = document.createElement('div');
+            card.className = 'asic-compare-card';
+            card.innerHTML = `
+                <div class="asic-title">
+                    <span>🌸 ASIC ${idx+2}</span>
+                    <button class="delete-asic" data-idx="${idx}">🗑️</button>
+                </div>
+                <div class="asic-field">
+                    <span>⚙️ Хешрейт</span>
+                    <input type="number" class="compare-hashrate" value="${asic.hashrate}" step="1" data-idx="${idx}">
+                    <span>TH/s</span>
+                </div>
+                <div class="asic-field">
+                    <span>🔌 Потребление</span>
+                    <input type="number" class="compare-power" value="${asic.power}" step="0.1" data-idx="${idx}">
+                    <span>кВт</span>
+                </div>
+                <div class="asic-field">
+                    <span>💰 Цена ASIC</span>
+                    <input type="number" class="compare-price" value="${asic.price}" step="1000" data-idx="${idx}">
+                    <span>₽</span>
+                </div>
+                <div class="compare-result">
+                    📈 прибыль/день: ${Math.round(res.profitRub)} ₽<br>
+                    ⏳ окупаемость: ${paybackText}
+                </div>
+            `;
+            container.appendChild(card);
+        });
+        document.querySelectorAll('.compare-hashrate').forEach(inp => {
+            inp.removeEventListener('input', handleCompareInput);
+            inp.addEventListener('input', handleCompareInput);
+        });
+        document.querySelectorAll('.compare-power').forEach(inp => {
+            inp.removeEventListener('input', handleCompareInput);
+            inp.addEventListener('input', handleCompareInput);
+        });
+        document.querySelectorAll('.compare-price').forEach(inp => {
+            inp.removeEventListener('input', handleCompareInput);
+            inp.addEventListener('input', handleCompareInput);
+        });
+        document.querySelectorAll('.delete-asic').forEach(btn => {
+            btn.removeEventListener('click', handleDeleteAsic);
+            btn.addEventListener('click', handleDeleteAsic);
+        });
+    }
+
+    function handleCompareInput(e) {
+        const idx = parseInt(e.target.dataset.idx);
+        if (isNaN(idx)) return;
+        const newHashrate = parseFloat(document.querySelector(`.compare-hashrate[data-idx="${idx}"]`).value);
+        const newPower = parseFloat(document.querySelector(`.compare-power[data-idx="${idx}"]`).value);
+        const newPrice = parseFloat(document.querySelector(`.compare-price[data-idx="${idx}"]`).value);
+        if (!isNaN(newHashrate)) compareAsics[idx].hashrate = newHashrate;
+        if (!isNaN(newPower)) compareAsics[idx].power = newPower;
+        if (!isNaN(newPrice)) compareAsics[idx].price = newPrice;
+        if (currentNetworkData.difficulty) updateAllDataAndCalculate();
+    }
+
+    function handleDeleteAsic(e) {
+        const idx = parseInt(e.target.dataset.idx);
+        if (!isNaN(idx)) {
+            compareAsics.splice(idx, 1);
+            if (currentNetworkData.difficulty) updateAllDataAndCalculate();
+        }
+    }
+
+    function addCompareAsic() {
+        if (compareAsics.length >= 3) {
+            alert("🌸 можно сравнить не более 3 дополнительных асиков");
+            return;
+        }
+        compareAsics.push({
+            id: Date.now() + Math.random(),
+            hashrate: 100,
+            power: 1.5,
+            price: 15000
+        });
+        if (currentNetworkData.difficulty) updateAllDataAndCalculate();
+    }
+
+    function resetWhatIf() {
+        document.getElementById('manualBtcPrice').value = '';
+        document.getElementById('manualUsdRate').value = '';
+        if (currentNetworkData.difficulty) updateAllDataAndCalculate();
+    }
+
+    function attachInputListeners() {
+        const ids = ['hashrate', 'uptime', 'power', 'kwhPrice', 'asicPrice', 'manualBtcPrice', 'manualUsdRate'];
+        ids.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('input', () => {
+                    if (currentNetworkData.difficulty && currentNetworkData.btcPriceUsd) {
+                        updateAllDataAndCalculate();
+                    } else {
+                        const uptimeVal = parseFloat(document.getElementById('uptime').value);
+                        if (!isNaN(uptimeVal)) updateHoursHint(uptimeVal);
+                    }
+                });
+            }
+        });
+        document.getElementById('resetWhatIfBtn')?.addEventListener('click', resetWhatIf);
+        document.getElementById('addCompareAsicBtn')?.addEventListener('click', addCompareAsic);
+        const toggleBtn = document.getElementById('toggleCompareBtn');
+        const compareContainer = document.getElementById('compareContainer');
+        toggleBtn?.addEventListener('click', () => {
+            if (compareContainer.style.display === 'none') {
+                compareContainer.style.display = 'block';
+                toggleBtn.innerHTML = '🌸 Скрыть сравнение';
+            } else {
+                compareContainer.style.display = 'none';
+                toggleBtn.innerHTML = '🌸 Сравнить ASIC';
+            }
+        });
+    }
+
+    function startAutoRefresh() {
+        updateAllDataAndCalculate();
+        if (updateTimer) clearInterval(updateTimer);
+        updateTimer = setInterval(() => {
+            updateAllDataAndCalculate();
+        }, 60000);
+    }
+
+    window.addEventListener('load', () => {
+        const loader = document.getElementById('loaderOverlay');
+        if (loader) {
+            setTimeout(() => {
+                loader.style.opacity = '0';
+                setTimeout(() => loader.remove(), 500);
+            }, 800);
+        }
+        attachInputListeners();
+        startAutoRefresh();
+    });
+</script>
+</body>
+</html>
